@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import colors from "colors";
 import morgan from "morgan";
+import cros from "cros";
 
 import connectDB from "./config/db.js";
 import TransactionsRoute from "./routes/transactions.js";
@@ -12,17 +13,7 @@ connectDB();
 const app = express();
 
 // middlewares
-app.use(function (req, res, next) {
-  res.header(
-    "Access-Control-Allow-Origin",
-    "https://cocky-clarke-5407af.netlify.app/"
-  );
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
+app.use(cros());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
