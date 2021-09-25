@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import colors from "colors";
 import morgan from "morgan";
-import cros from "cros";
+import cors from "cors";
 
 import connectDB from "./config/db.js";
 import TransactionsRoute from "./routes/transactions.js";
@@ -13,7 +13,7 @@ connectDB();
 const app = express();
 
 // middlewares
-app.use(cros());
+app.use(cors());
 
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
