@@ -1,5 +1,7 @@
+import crypto from "crypto";
 import User from "../models/User.js";
 import ErrorResponse from "../utils/ErrorResponse.js";
+import sendEmail from "../utils/sendEmail.js";
 
 // @desc   register new user
 // @route   POST /api/auth/register
@@ -76,13 +78,57 @@ export const forgotPassword = async (req, res, next) => {
     `;
 
     // send email
-  } catch (e) {}
+    try {
+      sendEmail({
+        to: user.email,
+        subject: "Password reset request",
+        html: message,
+      });
+
+      res.status(200).json({ success: true, data: "Email Sent" });
+    } catch (e) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      user.save();
+
+      return next(new ErrorResponse("Email could not be sent", 500));
+    }
+  } catch (err) {
+    next(err);
+  }
 };
 // @desc   reset password route
 // @route   PUT /api/auth/resetpassword/:resetToken
 // @access   Public
-export const resetPassword = (req, res, next) => {
-  res.send("reset password route " + req.params.resetToken);
+export const resetPassword = async (req, res, next) => {
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.resetToken)
+    .digest("hex");
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(new ErrorResponse("Invalid reset Token", 400));
+    }
+
+    // save the password to db
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: "password reset successful",
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const sendToken = (user, statusCode, res) => {
